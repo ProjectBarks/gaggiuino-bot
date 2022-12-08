@@ -8,7 +8,6 @@ import { Cache, CacheKeys } from '../helpers/cache.js';
 const GITHUB_USER = 'Zer0-bit';
 const GITHUB_REPO = 'gaggiuino';
 const AIRTABLE_BASE = 'appVJDLktxcKImcay';
-const PREDICTIVE_SCALE_ERROR_TOLERANCE = 1.5;
 
 export const data = new SlashCommandBuilder()
   .setName('log')
@@ -90,10 +89,7 @@ export async function execute(interaction) {
     return;
   }
 
-  let nextPZ = pz; // by default don't change PZ unless within expected error
-  if (Math.abs(a - p) > PREDICTIVE_SCALE_ERROR_TOLERANCE) {
-    nextPZ += (a - p) / 2;
-  }
+  const nextPZ = (a - p) / 2;
 
   const round = (x, digits) =>
     (Math.round(x * 10 ** digits) / 10 ** digits).toFixed(digits);
