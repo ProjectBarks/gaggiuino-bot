@@ -4,10 +4,12 @@ import Fuse from 'fuse.js';
 import Airtable from 'airtable';
 
 import { Cache, CacheKeys } from '../helpers/cache.js';
+import { isProduction } from '../helpers/environment.js';
 
 const GITHUB_USER = 'Zer0-bit';
 const GITHUB_REPO = 'gaggiuino';
 const AIRTABLE_BASE = 'appVJDLktxcKImcay';
+const ARBITRARY_MAX_VALUE = 150;
 
 export const data = new SlashCommandBuilder()
   .setName('log')
@@ -49,6 +51,9 @@ export const data = new SlashCommandBuilder()
       .setDescription('important notes to share during the shot')
   );
 
+const round = (x, digits) =>
+  (Math.round(x * 10 ** digits) / 10 ** digits).toFixed(digits);
+
 export async function execute(interaction) {
   const rawP = interaction.options.getNumber('predicted');
   const p = Math.abs(rawP) < 0.005 ? 0.005 : rawP; // prevent divide by zero
@@ -80,6 +85,18 @@ export async function execute(interaction) {
     return;
   }
 
+  const maxVal = Math.max(p, a, pz);
+  if (maxVal > ARBITRARY_MAX_VALUE) {
+    await interaction.reply({
+      content: `Input of, "${round(
+        maxVal,
+        2
+      )}" is too large, are you sure you entered the values in the correct format?`,
+      ephemeral: true,
+    });
+    return;
+  }
+
   if (!build) {
     await interaction.reply({
       content:
@@ -91,23 +108,23 @@ export async function execute(interaction) {
 
   const nextPZ = pz + (a - p) / 2;
 
-  const round = (x, digits) =>
-    (Math.round(x * 10 ** digits) / 10 ** digits).toFixed(digits);
-  const base = new Airtable().base(AIRTABLE_BASE);
-  await base('Predicative Scale Tests').create(
-    [
-      {
-        fields: {
-          'User Tag': interaction.user.tag,
-          Predicted: p,
-          Actual: a,
-          'Pump Zero': pz,
-          'Build Version': build,
+  if (isProduction) {
+    const base = new Airtable().base(AIRTABLE_BASE);
+    await base('Predicative Scale Tests').create(
+      [
+        {
+          fields: {
+            'User Tag': interaction.user.tag,
+            Predicted: p,
+            Actual: a,
+            'Pump Zero': pz,
+            'Build Version': build,
+          },
         },
-      },
-    ],
-    { typecast: true }
-  );
+      ],
+      { typecast: true }
+    );
+  }
 
   const embed = new EmbedBuilder()
     .setColor(0xef4e2b)
