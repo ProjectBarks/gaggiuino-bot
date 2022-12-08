@@ -89,7 +89,7 @@ export async function execute(interaction) {
     return;
   }
 
-  const nextPZ = (a - p) / 2;
+  const nextPZ = pz + (a - p) / 2;
 
   const round = (x, digits) =>
     (Math.round(x * 10 ** digits) / 10 ** digits).toFixed(digits);
