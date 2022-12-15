@@ -254,7 +254,7 @@ export async function execute(interaction) {
   await interaction.reply({ embeds: [embed] });
   if (isLikelyBadData)
     await interaction.followUp({
-      content: `**With "${samples.length}" samples we noticed data currently has week correlation.** Ensure you are following the advice provided.`,
+      content: `**With "${samples.length}" samples we noticed your entries have weak correlation, please ensure you're following the calibration advice in the pinned post`,
       ephemeral: true,
     });
 }
