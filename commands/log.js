@@ -196,7 +196,7 @@ export async function execute(interaction) {
   function getNextPumpZero(p, a, pz, samples) {
     const DEFAULT_RESULT = {
       isLikelyBadData: false,
-      next: pz + (a - p) / 2,
+      next: pz + (a - p) / (samples.length < 4 ? 2 : 4),
       quality: 'poor',
     };
     if (samples.length < 4) return DEFAULT_RESULT;
@@ -254,7 +254,7 @@ export async function execute(interaction) {
   await interaction.reply({ embeds: [embed] });
   if (isLikelyBadData)
     await interaction.followUp({
-      content: `With "${samples.length}" samples we noticed your entries have weak correlation, **please ensure you're following the calibration advice in the pinned post**.`,
+      content: `With "${samples.length}" samples we noticed your entries have weak Correlation, **please ensure you're following the calibration advice in the pinned post**.`,
       ephemeral: true,
     });
 }
