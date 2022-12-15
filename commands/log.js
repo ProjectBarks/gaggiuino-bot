@@ -194,9 +194,11 @@ export async function execute(interaction) {
   }
 
   function getNextPumpZero(p, a, pz, samples) {
+    const divisor = samples.length < 4 ? 2 : 4;
+
     const DEFAULT_RESULT = {
       isLikelyBadData: false,
-      next: pz + (a - p) / (samples.length < 4 ? 2 : 4),
+      next: pz + (a - p) / divisor,
       quality: 'poor',
     };
     if (samples.length < 4) return DEFAULT_RESULT;
