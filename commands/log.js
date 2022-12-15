@@ -198,12 +198,11 @@ export async function execute(interaction) {
     const DEFAULT_RESULT = {
       isLikelyBadData: false,
       next: pz + (a - p) / divisor,
-      quality: 'need-data',
     };
-    if (samples.length < 4) return DEFAULT_RESULT;
+    if (samples.length < 4) return { ...DEFAULT_RESULT, quality: 'need-data' };
     const lr = regression.linear(samples);
     console.log(`${interaction.user.tag} regression`, lr);
-    if (lr.r2 <= 0.5) return { ...DEFAULT_RESULT, isLikelyBadData: true };
+    if (lr.r2 <= 0.5) return { ...DEFAULT_RESULT, quality: 'poor', isLikelyBadData: true };
     const next = lr.equation.pop();
     return {
       ...DEFAULT_RESULT,
