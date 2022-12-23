@@ -73,6 +73,9 @@ const AirtableFields = {
 
 export async function execute(interaction) {
   const withDevDefault = (v, d) => v ?? (isProduction ? undefined : d);
+  const round = (x, digits) =>
+    (Math.round(x * 10 ** digits) / 10 ** digits).toFixed(digits);
+
 
   const rawP = interaction.options.getNumber('predicted');
   const p = Math.abs(rawP) < 0.005 ? 0.005 : rawP; // prevent divide by zero
@@ -182,9 +185,6 @@ export async function execute(interaction) {
       const pz = record.fields[AirtableFields.PUMP_ZERO];
       return [delta, pz];
     });
-
-  const round = (x, digits) =>
-    (Math.round(x * 10 ** digits) / 10 ** digits).toFixed(digits);
 
   function getLabelForBound(bounds, input) {
     for (const bound of bounds) {
