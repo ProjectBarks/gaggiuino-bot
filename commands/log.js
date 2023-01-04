@@ -59,6 +59,8 @@ export const data = new SlashCommandBuilder()
       .setDescription('important notes to share during the shot')
   );
 
+const GITHUB_USER = 'Zer0-bit';
+const GITHUB_REPO = 'gaggiuino';  
 const ARBITRARY_MAX_VALUE = 150;
 
 export async function execute(interaction) {
