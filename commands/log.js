@@ -10,14 +10,18 @@ import GitHub from 'github-api';
 import Fuse from 'fuse.js';
 import Airtable from 'airtable';
 import regression from 'regression';
-import { stripIndents } from 'common-tags';
 
+import {
+  AIRTABLE_BASE,
+  AIRTABLE_PREDICTIVE_SCALES_TABLE,
+  AirtablePredictiveScalesFields,
+} from '../helpers/airtable.js';
 import { Cache, CacheKeys } from '../helpers/cache.js';
 import { isProduction } from '../helpers/environment.js';
 
 export const data = new SlashCommandBuilder()
   .setName('log')
-  .setDescription('logs a predictive scale shot ')
+  .setDescription('logs a predictive scale shot')
   .addNumberOption((option) =>
     option
       .setName('predicted')
@@ -55,27 +59,12 @@ export const data = new SlashCommandBuilder()
       .setDescription('important notes to share during the shot')
   );
 
-const GITHUB_USER = 'Zer0-bit';
-const GITHUB_REPO = 'gaggiuino';
-const AIRTABLE_BASE = 'appVJDLktxcKImcay';
-const AIRTABLE_TABLE_NAME = 'Predicative Scale Tests';
 const ARBITRARY_MAX_VALUE = 150;
-
-const AirtableFields = {
-  USER: 'User Tag',
-  PREDICTED: 'Predicted',
-  ACTUAL: 'Actual',
-  PUMP_ZERO: 'Pump Zero',
-  BUILD: 'Build Version',
-  CREATED: 'Created',
-  EXCLUDE_FROM_CALCULATIONS: 'Exclude From Calculations',
-};
 
 export async function execute(interaction) {
   const withDevDefault = (v, d) => v ?? (isProduction ? undefined : d);
   const round = (x, digits) =>
     (Math.round(x * 10 ** digits) / 10 ** digits).toFixed(digits);
-
 
   const rawP = interaction.options.getNumber('predicted');
   const p = Math.abs(rawP) < 0.005 ? 0.005 : rawP; // prevent divide by zero
@@ -142,19 +131,20 @@ export async function execute(interaction) {
   }
 
   //
-  /// FETCH DATA
+  /// INSERT DATA
   //
+  await interaction.deferReply({ ephemeral: true });
   const base = new Airtable().base(AIRTABLE_BASE);
   if (isProduction) {
-    await base(AIRTABLE_TABLE_NAME).create(
+    await base(AIRTABLE_PREDICTIVE_SCALES_TABLE).create(
       [
         {
           fields: {
-            [AirtableFields.USER]: interaction.user.tag,
-            [AirtableFields.PREDICTED]: p,
-            [AirtableFields.ACTUAL]: a,
-            [AirtableFields.PUMP_ZERO]: pz,
-            [AirtableFields.BUILD]: build,
+            [AirtablePredictiveScalesFields.USER]: interaction.user.tag,
+            [AirtablePredictiveScalesFields.PREDICTED]: p,
+            [AirtablePredictiveScalesFields.ACTUAL]: a,
+            [AirtablePredictiveScalesFields.PUMP_ZERO]: pz,
+            [AirtablePredictiveScalesFields.BUILD]: build,
           },
         },
       ],
@@ -163,26 +153,32 @@ export async function execute(interaction) {
   }
 
   //
-  /// NEXT PUMP ZERO CALCULATION
+  /// FETCH DATA
   //
-  const records = await base(AIRTABLE_TABLE_NAME)
+  const records = await base(AIRTABLE_PREDICTIVE_SCALES_TABLE)
     .select({
       view: 'Grid view',
-      fields: Object.values(AirtableFields),
-      filterByFormula: `{${AirtableFields.USER}} = '${interaction.user.tag}'`,
-      sort: [{ field: AirtableFields.CREATED, direction: 'desc' }],
+      fields: Object.values(AirtablePredictiveScalesFields),
+      filterByFormula: `{${AirtablePredictiveScalesFields.USER}} = '${interaction.user.tag}'`,
+      sort: [
+        { field: AirtablePredictiveScalesFields.CREATED, direction: 'desc' },
+      ],
     })
     .firstPage();
 
+  //
+  /// NEXT PUMP ZERO CALCULATION
+  //
   const samples = records
     .filter(
-      (record) => !record.fields[AirtableFields.EXCLUDE_FROM_CALCULATIONS]
+      (record) =>
+        !record.fields[AirtablePredictiveScalesFields.EXCLUDE_FROM_CALCULATIONS]
     )
     .map((record) => {
       const delta =
-        record.fields[AirtableFields.PREDICTED] -
-        record.fields[AirtableFields.ACTUAL];
-      const pz = record.fields[AirtableFields.PUMP_ZERO];
+        record.fields[AirtablePredictiveScalesFields.PREDICTED] -
+        record.fields[AirtablePredictiveScalesFields.ACTUAL];
+      const pz = record.fields[AirtablePredictiveScalesFields.PUMP_ZERO];
       return [delta, pz];
     });
 
@@ -202,7 +198,8 @@ export async function execute(interaction) {
     if (samples.length < 4) return { ...DEFAULT_RESULT, quality: 'need-data' };
     const lr = regression.linear(samples);
     console.log(`${interaction.user.tag} regression`, lr);
-    if (lr.r2 <= 0.5) return { ...DEFAULT_RESULT, quality: 'poor', isLikelyBadData: true };
+    if (lr.r2 <= 0.5)
+      return { ...DEFAULT_RESULT, quality: 'poor', isLikelyBadData: true };
     const next = lr.equation.pop();
     return {
       ...DEFAULT_RESULT,
@@ -251,7 +248,7 @@ export async function execute(interaction) {
     .setTimestamp();
   if (comments) embed.setDescription(comments);
 
-  await interaction.reply({ embeds: [embed] });
+  await interaction.editReply({ embeds: [embed] });
   if (isLikelyBadData)
     await interaction.followUp({
       content: `With "${samples.length}" samples we noticed your entries have weak Correlation, **please ensure you're following the calibration advice in the pinned post**.`,

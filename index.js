@@ -14,7 +14,10 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 // COMMAND SETUP
 client.commands = new Collection();
-const commands = await Promise.all([import('./commands/log.js')]);
+const commands = await Promise.all([
+  import('./commands/log.js'),
+  import('./commands/log-history.js'),
+]);
 for (const command of commands) {
   client.commands.set(command.data.name, command);
 }
@@ -41,6 +44,7 @@ client.once(Events.ClientReady, (c) => {
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  if (interaction.isButton()) return;
   const command = interaction.client.commands.get(interaction.commandName);
 
   if (!command) {
@@ -53,10 +57,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
       await command.execute(interaction);
     } catch (error) {
       console.error(error);
-      await interaction.reply({
-        content: 'There was an error while executing this command!',
-        ephemeral: true,
-      });
+      interaction.replied
+        ? await interaction.reply({
+            content: 'There was an error while executing this command!',
+            ephemeral: true,
+          })
+        : await interaction.editReply({
+            content: 'There was an error while executing this command!',
+            ephemeral: true,
+          });
     }
   } else if (interaction.isAutocomplete()) {
     try {
