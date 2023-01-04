@@ -1,4 +1,10 @@
-import { createCanvas } from 'canvas';
+import { createCanvas, registerFont } from 'canvas';
+
+registerFont('assets/poppins.ttf', { family: 'poppins' });
+registerFont('assets/poppins-bold.ttf', {
+  family: 'poppins',
+  weight: 700,
+});
 
 const cellWidth = 100;
 const cellHeight = 40;
@@ -6,7 +12,7 @@ const offsetLeft = 8;
 const offsetTop = 26;
 const spacing = 20;
 const titleSpacing = 2;
-const fontFamily = 'inherit';
+const fontFamily = 'poppins';
 const paddingVertical = 5;
 const paddingHorizontal = 5;
 const backgroundColor = '#2E3136';
