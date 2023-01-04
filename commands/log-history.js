@@ -14,7 +14,6 @@ import {
   AIRTABLE_PREDICTIVE_SCALES_TABLE,
   AirtablePredictiveScalesFields,
 } from '../helpers/airtable.js';
-import { GITHUB_USER, GITHUB_REPO } from '../helpers/github.js';
 import renderTable, { Table } from '../helpers/table-renderer.js';
 
 export const data = new SlashCommandBuilder()
