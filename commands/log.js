@@ -10,6 +10,7 @@ import GitHub from 'github-api';
 import Fuse from 'fuse.js';
 import Airtable from 'airtable';
 import regression from 'regression';
+import { oneLine } from 'common-tags';
 
 import {
   AIRTABLE_BASE,
@@ -60,7 +61,7 @@ export const data = new SlashCommandBuilder()
   );
 
 const GITHUB_USER = 'Zer0-bit';
-const GITHUB_REPO = 'gaggiuino';  
+const GITHUB_REPO = 'gaggiuino';
 const ARBITRARY_MAX_VALUE = 150;
 
 export async function execute(interaction) {
@@ -135,7 +136,7 @@ export async function execute(interaction) {
   //
   /// INSERT DATA
   //
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply();
   const base = new Airtable().base(AIRTABLE_BASE);
   if (isProduction) {
     await base(AIRTABLE_PREDICTIVE_SCALES_TABLE).create(
@@ -251,9 +252,18 @@ export async function execute(interaction) {
   if (comments) embed.setDescription(comments);
 
   await interaction.editReply({ embeds: [embed] });
-  if (isLikelyBadData)
+  if (true || isLikelyBadData)
     await interaction.followUp({
-      content: `With "${samples.length}" samples we noticed your entries have weak Correlation, **please ensure you're following the calibration advice in the pinned post**.`,
+      content:
+        oneLine`
+        With "${samples.length}" samples we noticed your entries have
+        weak correlation, **please ensure you're following the
+        calibration advice in the [pinned post](
+        https://discord.com/channels/890339612441063494/989599042277343273/1052665282054864908)**.` +
+        '\n\n' +
+        oneLine`
+        *After reading the post consider dropping some of your bad
+        data with \`/log-history\`.*`,
       ephemeral: true,
     });
 }
