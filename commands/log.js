@@ -252,7 +252,7 @@ export async function execute(interaction) {
   if (comments) embed.setDescription(comments);
 
   await interaction.editReply({ embeds: [embed] });
-  if (true || isLikelyBadData)
+  if (isLikelyBadData)
     await interaction.followUp({
       content:
         oneLine`
